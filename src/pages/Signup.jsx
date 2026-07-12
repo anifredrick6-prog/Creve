@@ -100,7 +100,7 @@ function Signup() {
             type="button"
             onClick={() => setRole('buyer')}
             className={`flex-1 text-sm font-semibold py-2 rounded-full transition-colors ${
-              role === 'buyer' ? 'bg-teal text-paper' : 'text-ink/60'
+              role === 'buyer' ? 'bg-coral text-white' : 'text-ink/60'
             }`}
           >
             I'm buying
@@ -109,7 +109,7 @@ function Signup() {
             type="button"
             onClick={() => setRole('vendor')}
             className={`flex-1 text-sm font-semibold py-2 rounded-full transition-colors ${
-              role === 'vendor' ? 'bg-teal text-paper' : 'text-ink/60'
+              role === 'vendor' ? 'bg-coral text-white' : 'text-ink/60'
             }`}
           >
             I'm selling
@@ -197,7 +197,7 @@ function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full font-bold text-sm px-6 py-3.5 rounded-full bg-teal text-paper hover:bg-teal-deep transition-colors disabled:opacity-60"
+            className="w-full font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors disabled:opacity-60"
           >
             {loading ? 'Creating account…' : 'Create account'}
           </button>
@@ -205,7 +205,7 @@ function Signup() {
 
         <p className="mt-6 text-sm text-ink/60 text-center">
           Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-teal">
+          <Link to="/login" className="font-semibold text-coral">
             Log in
           </Link>
         </p>

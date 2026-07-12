@@ -50,8 +50,8 @@ function Welcome() {
       </header>
 
       <main className="flex-1 max-w-md w-full mx-auto px-5 py-14 text-center">
-        <div className="w-14 h-14 rounded-full bg-teal/15 flex items-center justify-center mx-auto mb-5">
-          <span className="font-display font-semibold text-teal-deep text-lg">
+        <div className="w-14 h-14 rounded-full bg-coral-light flex items-center justify-center mx-auto mb-5">
+          <span className="font-display font-semibold text-coral text-lg">
             {profile?.full_name?.[0] ?? '…'}
           </span>
         </div>
@@ -74,7 +74,7 @@ function Welcome() {
         </p>
         <Link
           to="/"
-          className="inline-block mt-6 text-sm font-semibold text-teal"
+          className="inline-block mt-6 text-sm font-semibold text-coral"
         >
           Back to home
         </Link>

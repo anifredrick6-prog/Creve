@@ -71,7 +71,7 @@ function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full font-bold text-sm px-6 py-3.5 rounded-full bg-teal text-paper hover:bg-teal-deep transition-colors disabled:opacity-60"
+            className="w-full font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors disabled:opacity-60"
           >
             {loading ? 'Logging in…' : 'Log in'}
           </button>
@@ -79,7 +79,7 @@ function Login() {
 
         <p className="mt-6 text-sm text-ink/60 text-center">
           New to Creve?{' '}
-          <Link to="/signup" className="font-semibold text-teal">
+          <Link to="/signup" className="font-semibold text-coral">
             Create an account
           </Link>
         </p>
