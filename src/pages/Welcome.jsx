@@ -77,10 +77,10 @@ function Welcome() {
           account and profile were created correctly.
         </p>
         <Link
-          to="/"
-          className="inline-block mt-6 text-sm font-semibold text-coral"
+          to={profile?.role === 'vendor' ? '/dashboard' : '/marketplace'}
+          className="inline-block mt-6 font-bold text-sm px-6 py-3 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors"
         >
-          Back to home
+          {profile?.role === 'vendor' ? 'Go to your dashboard' : 'Browse the marketplace'}
         </Link>
       </main>
     </div>
