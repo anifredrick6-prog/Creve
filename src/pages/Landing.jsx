@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Logo from '../components/Logo.jsx'
 
 function Landing() {
   return (
@@ -18,7 +19,10 @@ function Nav() {
   return (
     <header className="sticky top-0 z-30 bg-paper/90 backdrop-blur-sm border-b border-line">
       <div className="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
-        <span className="font-display text-2xl font-bold tracking-tight text-ink">Creve</span>
+        <span className="flex items-center gap-2">
+          <Logo color="#F04E37" size={26} />
+          <span className="font-display text-2xl font-bold tracking-tight text-ink">Creve</span>
+        </span>
         <div className="flex items-center gap-2">
           <Link
             to="/login"

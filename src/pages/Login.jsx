@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import FormField from '../components/FormField.jsx'
+import Logo from '../components/Logo.jsx'
 
 function Login() {
   const navigate = useNavigate()
@@ -33,8 +34,9 @@ function Login() {
   return (
     <div className="min-h-screen bg-paper text-ink font-body flex flex-col">
       <header className="px-5 h-16 flex items-center border-b border-line">
-        <Link to="/" className="font-display text-2xl font-semibold text-ink">
-          Creve
+        <Link to="/" className="flex items-center gap-2">
+          <Logo color="#F04E37" size={24} />
+          <span className="font-display text-2xl font-bold text-ink">Creve</span>
         </Link>
       </header>
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../hooks/useAuth.js'
+import Logo from '../components/Logo.jsx'
 
 function Welcome() {
   const { session, loading } = useAuth()
@@ -40,7 +41,10 @@ function Welcome() {
   return (
     <div className="min-h-screen bg-paper text-ink font-body flex flex-col">
       <header className="px-5 h-16 flex items-center justify-between border-b border-line">
-        <span className="font-display text-2xl font-semibold text-ink">Creve</span>
+        <span className="flex items-center gap-2">
+          <Logo color="#F04E37" size={24} />
+          <span className="font-display text-2xl font-bold text-ink">Creve</span>
+        </span>
         <button
           onClick={handleLogout}
           className="text-sm font-semibold text-ink/60 hover:text-ink"
