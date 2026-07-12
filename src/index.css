@@ -7,8 +7,8 @@ html {
 }
 
 body {
-  background-color: #F5F3EC;
-  color: #0F2E28;
+  background-color: #FAF9F6;
+  color: #1C1B19;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -21,6 +21,6 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid #E0A458;
+  outline: 2px solid #F04E37;
   outline-offset: 2px;
 }
