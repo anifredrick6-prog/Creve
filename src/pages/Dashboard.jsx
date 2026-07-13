@@ -11,8 +11,6 @@ function Dashboard() {
   const [profile, setProfile] = useState(null)
   const [products, setProducts] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(true)
-  const [messages, setMessages] = useState([])
-  const [loadingMessages, setLoadingMessages] = useState(true)
 
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
@@ -53,21 +51,6 @@ function Dashboard() {
   useEffect(() => {
     loadProducts()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session])
-
-  useEffect(() => {
-    async function loadMessages() {
-      if (!session) return
-      setLoadingMessages(true)
-      const { data } = await supabase
-        .from('messages')
-        .select('id, message, created_at, buyer_id, profiles!messages_buyer_id_fkey(full_name)')
-        .eq('vendor_id', session.user.id)
-        .order('created_at', { ascending: false })
-      setMessages(data ?? [])
-      setLoadingMessages(false)
-    }
-    loadMessages()
   }, [session])
 
   async function handleAddProduct(e) {
@@ -153,6 +136,9 @@ function Dashboard() {
             <span className="font-display text-2xl font-bold text-ink">Creve</span>
           </Link>
           <div className="flex items-center gap-4">
+            <Link to="/messages" className="text-sm font-semibold text-ink/70 hover:text-ink">
+              Messages
+            </Link>
             <Link to="/marketplace" className="text-sm font-semibold text-ink/70 hover:text-ink">
               Marketplace
             </Link>
@@ -275,34 +261,6 @@ function Dashboard() {
               >
                 Delete
               </button>
-            </div>
-          ))}
-        </div>
-
-        <h2 className="font-display font-bold text-lg text-ink mb-4 mt-10">
-          Messages
-        </h2>
-
-        {loadingMessages && <p className="text-sm text-ink/50">Loading…</p>}
-
-        {!loadingMessages && messages.length === 0 && (
-          <p className="text-sm text-ink/50">
-            No messages yet — buyers can reach you from your vendor profile.
-          </p>
-        )}
-
-        <div className="space-y-3">
-          {messages.map((msg) => (
-            <div key={msg.id} className="border border-line rounded-xl p-4 bg-white">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-semibold text-sm text-ink">
-                  {msg.profiles?.full_name ?? 'A buyer'}
-                </span>
-                <span className="text-xs text-ink/40">
-                  {new Date(msg.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              <p className="text-sm text-ink/70">{msg.message}</p>
             </div>
           ))}
         </div>

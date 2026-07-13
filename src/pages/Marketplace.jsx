@@ -33,12 +33,17 @@ function Marketplace() {
             <Logo color="#F04E37" size={24} />
             <span className="font-display text-2xl font-bold text-ink">Creve</span>
           </Link>
-          <Link
-            to="/dashboard"
-            className="text-sm font-semibold text-ink/70 hover:text-ink"
-          >
-            Sell
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link to="/messages" className="text-sm font-semibold text-ink/70 hover:text-ink">
+              Messages
+            </Link>
+            <Link
+              to="/dashboard"
+              className="text-sm font-semibold text-ink/70 hover:text-ink"
+            >
+              Sell
+            </Link>
+          </div>
         </div>
       </header>
 
