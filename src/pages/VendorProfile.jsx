@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
+import { useAuth } from '../hooks/useAuth.js'
 import Logo from '../components/Logo.jsx'
 
 function VendorProfile() {
   const { vendorId } = useParams()
+  const { session } = useAuth()
   const [vendor, setVendor] = useState(null)
   const [products, setProducts] = useState([])
   const [loadingData, setLoadingData] = useState(true)
+  const [messageText, setMessageText] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [sendError, setSendError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -30,6 +36,31 @@ function VendorProfile() {
     }
     load()
   }, [vendorId])
+
+  async function handleSendMessage(e) {
+    e.preventDefault()
+    setSendError('')
+
+    if (!messageText.trim()) return
+
+    setSending(true)
+
+    const { error } = await supabase.from('messages').insert({
+      buyer_id: session.user.id,
+      vendor_id: vendorId,
+      message: messageText.trim(),
+    })
+
+    setSending(false)
+
+    if (error) {
+      setSendError(error.message)
+      return
+    }
+
+    setMessageText('')
+    setSent(true)
+  }
 
   return (
     <div className="min-h-screen bg-paper text-ink font-body">
@@ -79,13 +110,57 @@ function VendorProfile() {
               </div>
             </div>
 
-            <button
-              disabled
-              className="w-full font-bold text-sm px-6 py-3.5 rounded-full border border-line text-ink/40 mb-10 cursor-not-allowed"
-              title="Messaging is coming soon"
-            >
-              Message vendor — coming soon
-            </button>
+            {session && session.user.id === vendorId ? null : (
+              <div className="border border-line rounded-2xl p-5 bg-white mb-10">
+                <h2 className="font-display font-bold text-base text-ink mb-1">
+                  Message this vendor
+                </h2>
+                <p className="text-xs text-ink/50 mb-4">
+                  Sent messages are logged and visible to Creve if you ever
+                  need to report a problem.
+                </p>
+
+                {!session && (
+                  <p className="text-sm text-ink/60">
+                    <Link to="/login" className="font-semibold text-coral">
+                      Log in
+                    </Link>{' '}
+                    to message this vendor.
+                  </p>
+                )}
+
+                {session && sent && (
+                  <p className="text-sm font-semibold text-coral">
+                    Message sent — the vendor will see it on their dashboard.
+                  </p>
+                )}
+
+                {session && !sent && (
+                  <form onSubmit={handleSendMessage} className="space-y-3">
+                    <textarea
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      rows={3}
+                      required
+                      placeholder="Ask about a product, price, or pickup…"
+                      className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35 focus:border-coral outline-none transition-colors resize-none"
+                    />
+                    {sendError && (
+                      <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5">
+                        {sendError}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={sending}
+                      className="w-full font-bold text-sm px-6 py-3 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors disabled:opacity-60"
+                    >
+                      {sending ? 'Sending…' : 'Send message'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
 
             <h2 className="font-display font-bold text-lg text-ink mb-4">
               {products.length} listing{products.length === 1 ? '' : 's'}
