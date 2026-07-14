@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../hooks/useAuth.js'
 import Logo from '../components/Logo.jsx'
+import { Store, BadgeCheck, Inbox } from 'lucide-react'
 
 function Messages() {
   const { session, loading } = useAuth()
@@ -35,14 +36,17 @@ function Messages() {
 
       const { data } = await supabase
         .from('messages')
-        .select(`id, message, created_at, ${otherColumn}, ${otherRelation}`)
+        .select(`id, message, created_at, sender_id, read, ${otherColumn}, ${otherRelation}`)
         .eq(column, session.user.id)
         .order('created_at', { ascending: false })
 
-      // Collapse to one row per other-party, keeping the most recent message
+      // Collapse to one row per other-party, keeping the most recent message,
+      // while checking every message in that thread for unread ones.
       const seen = new Map()
       for (const row of data ?? []) {
         const otherId = row[otherColumn]
+        const isUnreadForMe = row.sender_id !== session.user.id && !row.read
+
         if (!seen.has(otherId)) {
           seen.set(otherId, {
             otherId,
@@ -50,7 +54,10 @@ function Messages() {
             verified: row.profiles?.verified,
             lastMessage: row.message,
             lastAt: row.created_at,
+            hasUnread: isUnreadForMe,
           })
+        } else if (isUnreadForMe) {
+          seen.get(otherId).hasUnread = true
         }
       }
 
@@ -69,7 +76,8 @@ function Messages() {
             <Logo color="#F04E37" size={24} />
             <span className="font-display text-2xl font-bold text-ink">Creve</span>
           </Link>
-          <Link to="/marketplace" className="text-sm font-semibold text-ink/70 hover:text-ink">
+          <Link to="/marketplace" className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink">
+            <Store size={16} strokeWidth={2.5} />
             Marketplace
           </Link>
         </div>
@@ -81,7 +89,10 @@ function Messages() {
         {loadingConvos && <p className="text-sm text-ink/50">Loading…</p>}
 
         {!loadingConvos && conversations.length === 0 && (
-          <p className="text-sm text-ink/50">No conversations yet.</p>
+          <div className="flex flex-col items-center text-center py-10">
+            <Inbox size={28} strokeWidth={1.5} className="text-ink/25 mb-2" />
+            <p className="text-sm text-ink/50">No conversations yet.</p>
+          </div>
         )}
 
         <div className="space-y-2">
@@ -96,12 +107,19 @@ function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-sm text-ink truncate">
+                  <span className={`text-sm text-ink truncate ${convo.hasUnread ? 'font-bold' : 'font-semibold'}`}>
                     {convo.otherName}
                   </span>
-                  {convo.verified && <VerifiedDot />}
+                  {convo.verified && (
+                    <BadgeCheck size={14} className="text-coral shrink-0" strokeWidth={2.5} />
+                  )}
+                  {convo.hasUnread && (
+                    <span className="w-2 h-2 rounded-full bg-coral shrink-0" aria-label="Unread" />
+                  )}
                 </div>
-                <p className="text-xs text-ink/50 truncate">{convo.lastMessage}</p>
+                <p className={`text-xs truncate ${convo.hasUnread ? 'text-ink/80 font-medium' : 'text-ink/50'}`}>
+                  {convo.lastMessage}
+                </p>
               </div>
               <span className="text-xs text-ink/35 shrink-0">
                 {new Date(convo.lastAt).toLocaleDateString()}
@@ -111,25 +129,6 @@ function Messages() {
         </div>
       </main>
     </div>
-  )
-}
-
-function VerifiedDot() {
-  return (
-    <span
-      className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-coral shrink-0"
-      aria-label="Verified vendor"
-    >
-      <svg viewBox="0 0 12 12" className="w-1.5 h-1.5" fill="none">
-        <path
-          d="M2.5 6.2L4.8 8.5L9.5 3.5"
-          stroke="#FFFFFF"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
   )
 }
 

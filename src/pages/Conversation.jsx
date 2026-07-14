@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../hooks/useAuth.js'
 import Logo from '../components/Logo.jsx'
+import { ArrowLeft, BadgeCheck, Send } from 'lucide-react'
 
 function Conversation() {
   const { otherId } = useParams()
@@ -59,6 +60,15 @@ function Conversation() {
         .order('created_at', { ascending: true })
       setThread(data ?? [])
       setLoadingThread(false)
+
+      // Mark anything the other person sent as read now that we've opened it.
+      await supabase
+        .from('messages')
+        .update({ read: true })
+        .eq('buyer_id', buyerId)
+        .eq('vendor_id', vendorId)
+        .neq('sender_id', session.user.id)
+        .eq('read', false)
     }
 
     loadThread()
@@ -113,7 +123,8 @@ function Conversation() {
             <Logo color="#F04E37" size={24} />
             <span className="font-display text-2xl font-bold text-ink">Creve</span>
           </Link>
-          <Link to="/messages" className="text-sm font-semibold text-ink/70 hover:text-ink">
+          <Link to="/messages" className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink">
+            <ArrowLeft size={16} strokeWidth={2.5} />
             All messages
           </Link>
         </div>
@@ -125,7 +136,7 @@ function Conversation() {
             {otherProfile?.full_name ?? 'Conversation'}
           </h1>
           {otherProfile?.role === 'vendor' && otherProfile?.verified && (
-            <VerifiedDot />
+            <BadgeCheck size={16} className="text-coral" strokeWidth={2.5} />
           )}
         </div>
 
@@ -170,8 +181,9 @@ function Conversation() {
           <button
             type="submit"
             disabled={sending}
-            className="font-bold text-sm px-5 py-3 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors disabled:opacity-60 shrink-0"
+            className="flex items-center gap-1.5 font-bold text-sm px-5 py-3 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors disabled:opacity-60 shrink-0"
           >
+            <Send size={15} strokeWidth={2.5} />
             Send
           </button>
         </form>
@@ -183,25 +195,6 @@ function Conversation() {
         )}
       </main>
     </div>
-  )
-}
-
-function VerifiedDot() {
-  return (
-    <span
-      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-coral"
-      aria-label="Verified vendor"
-    >
-      <svg viewBox="0 0 12 12" className="w-2 h-2" fill="none">
-        <path
-          d="M2.5 6.2L4.8 8.5L9.5 3.5"
-          stroke="#FFFFFF"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
   )
 }
 

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../hooks/useAuth.js'
 import Logo from '../components/Logo.jsx'
+import { ArrowLeft, BadgeCheck, Clock, MessageCircle } from 'lucide-react'
 
 function VendorProfile() {
   const { vendorId } = useParams()
@@ -41,7 +42,8 @@ function VendorProfile() {
             <Logo color="#F04E37" size={24} />
             <span className="font-display text-2xl font-bold text-ink">Creve</span>
           </Link>
-          <Link to="/marketplace" className="text-sm font-semibold text-ink/70 hover:text-ink">
+          <Link to="/marketplace" className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink">
+            <ArrowLeft size={16} strokeWidth={2.5} />
             Back to marketplace
           </Link>
         </div>
@@ -66,11 +68,13 @@ function VendorProfile() {
                     {vendor.full_name}
                   </h1>
                   {vendor.verified ? (
-                    <span className="text-xs font-semibold text-coral bg-coral-light px-2.5 py-1 rounded-full">
+                    <span className="flex items-center gap-1 text-xs font-semibold text-coral bg-coral-light px-2.5 py-1 rounded-full">
+                      <BadgeCheck size={13} strokeWidth={2.5} />
                       Verified
                     </span>
                   ) : (
-                    <span className="text-xs font-semibold text-amber bg-amber/10 px-2.5 py-1 rounded-full">
+                    <span className="flex items-center gap-1 text-xs font-semibold text-amber bg-amber/10 px-2.5 py-1 rounded-full">
+                      <Clock size={13} strokeWidth={2.5} />
                       Pending
                     </span>
                   )}
@@ -86,8 +90,9 @@ function VendorProfile() {
                 {session ? (
                   <Link
                     to={`/messages/${vendorId}`}
-                    className="block text-center font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors"
+                    className="flex items-center justify-center gap-2 text-center font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors"
                   >
+                    <MessageCircle size={17} strokeWidth={2.5} />
                     Message this vendor
                   </Link>
                 ) : (
@@ -109,9 +114,10 @@ function VendorProfile() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {products.map((product) => (
-                <div
+                <Link
                   key={product.id}
-                  className="border border-line rounded-2xl bg-white overflow-hidden"
+                  to={`/product/${product.id}`}
+                  className="border border-line rounded-2xl bg-white overflow-hidden hover:border-coral/40 transition-colors"
                 >
                   {product.image_url ? (
                     <img
@@ -130,7 +136,7 @@ function VendorProfile() {
                       ₦{Number(product.price).toLocaleString()}
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </>

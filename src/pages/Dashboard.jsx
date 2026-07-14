@@ -2,11 +2,26 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../hooks/useAuth.js'
+import { useUnreadCount } from '../hooks/useUnreadCount.js'
 import Logo from '../components/Logo.jsx'
 import FormField from '../components/FormField.jsx'
+import {
+  MessageCircle,
+  Store,
+  LogOut,
+  BadgeCheck,
+  Clock,
+  ImagePlus,
+  X,
+  PlusCircle,
+  Trash2,
+  Package,
+  Eye,
+} from 'lucide-react'
 
 function Dashboard() {
   const { session, loading } = useAuth()
+  const hasUnread = useUnreadCount(session)
   const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [products, setProducts] = useState([])
@@ -15,7 +30,9 @@ function Dashboard() {
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
-  const [imageFile, setImageFile] = useState(null)
+  const [stockCount, setStockCount] = useState('')
+  const [imageFiles, setImageFiles] = useState([])
+  const [variantGroups, setVariantGroups] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -53,6 +70,29 @@ function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
+  function addImageFiles(fileList) {
+    const newFiles = Array.from(fileList ?? [])
+    setImageFiles((prev) => [...prev, ...newFiles].slice(0, 6))
+  }
+
+  function removeImageFile(index) {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function addVariantGroup() {
+    setVariantGroups((prev) => [...prev, { name: '', optionsText: '' }])
+  }
+
+  function updateVariantGroup(index, field, value) {
+    setVariantGroups((prev) =>
+      prev.map((g, i) => (i === index ? { ...g, [field]: value } : g))
+    )
+  }
+
+  function removeVariantGroup(index) {
+    setVariantGroups((prev) => prev.filter((_, i) => i !== index))
+  }
+
   async function handleAddProduct(e) {
     e.preventDefault()
     setError('')
@@ -64,15 +104,15 @@ function Dashboard() {
 
     setSubmitting(true)
 
-    let imageUrl = null
+    const uploadedUrls = []
 
-    if (imageFile) {
-      const fileExt = imageFile.name.split('.').pop()
-      const filePath = `${session.user.id}/${Date.now()}.${fileExt}`
+    for (const file of imageFiles) {
+      const fileExt = file.name.split('.').pop()
+      const filePath = `${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
         .from('product-images')
-        .upload(filePath, imageFile)
+        .upload(filePath, file)
 
       if (uploadError) {
         setError(`Image upload failed: ${uploadError.message}`)
@@ -84,15 +124,28 @@ function Dashboard() {
         .from('product-images')
         .getPublicUrl(filePath)
 
-      imageUrl = publicUrlData.publicUrl
+      uploadedUrls.push(publicUrlData.publicUrl)
     }
+
+    const cleanVariants = variantGroups
+      .filter((g) => g.name.trim() && g.optionsText.trim())
+      .map((g) => ({
+        name: g.name.trim(),
+        options: g.optionsText
+          .split(',')
+          .map((o) => o.trim())
+          .filter(Boolean),
+      }))
 
     const { error: insertError } = await supabase.from('products').insert({
       vendor_id: session.user.id,
       name,
       price: parseFloat(price),
       description,
-      image_url: imageUrl,
+      image_url: uploadedUrls[0] ?? null,
+      image_urls: uploadedUrls,
+      stock_count: stockCount === '' ? null : parseInt(stockCount, 10),
+      variants: cleanVariants,
     })
 
     setSubmitting(false)
@@ -105,7 +158,9 @@ function Dashboard() {
     setName('')
     setPrice('')
     setDescription('')
-    setImageFile(null)
+    setStockCount('')
+    setImageFiles([])
+    setVariantGroups([])
     loadProducts()
   }
 
@@ -136,14 +191,28 @@ function Dashboard() {
             <span className="font-display text-2xl font-bold text-ink">Creve</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/messages" className="text-sm font-semibold text-ink/70 hover:text-ink">
+            <Link
+              to="/messages"
+              className="relative flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
+            >
+              <MessageCircle size={16} strokeWidth={2.5} />
               Messages
+              {hasUnread && (
+                <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-coral" aria-label="Unread messages" />
+              )}
             </Link>
-            <Link to="/marketplace" className="text-sm font-semibold text-ink/70 hover:text-ink">
+            <Link
+              to="/marketplace"
+              className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
+            >
+              <Store size={16} strokeWidth={2.5} />
               Marketplace
             </Link>
-            <button onClick={handleLogout} className="text-sm font-semibold text-ink/70 hover:text-ink">
-              Log out
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
+            >
+              <LogOut size={16} strokeWidth={2.5} />
             </button>
           </div>
         </div>
@@ -155,11 +224,13 @@ function Dashboard() {
             Your listings
           </h1>
           {profile.verified ? (
-            <span className="text-xs font-semibold text-coral bg-coral-light px-2.5 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-xs font-semibold text-coral bg-coral-light px-2.5 py-1 rounded-full">
+              <BadgeCheck size={13} strokeWidth={2.5} />
               Verified
             </span>
           ) : (
-            <span className="text-xs font-semibold text-amber bg-amber/10 px-2.5 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-xs font-semibold text-amber bg-amber/10 px-2.5 py-1 rounded-full">
+              <Clock size={13} strokeWidth={2.5} />
               Pending review
             </span>
           )}
@@ -191,6 +262,22 @@ function Dashboard() {
             onChange={(e) => setPrice(e.target.value)}
             placeholder="e.g. 8500"
           />
+
+          <label className="block">
+            <span className="text-sm font-semibold text-ink/80 flex items-center gap-1.5">
+              <Package size={15} strokeWidth={2.5} className="text-ink/50" />
+              In stock (optional)
+            </span>
+            <input
+              type="number"
+              min="0"
+              value={stockCount}
+              onChange={(e) => setStockCount(e.target.value)}
+              placeholder="Leave blank if you're not tracking stock"
+              className="mt-1.5 w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35 focus:border-coral outline-none transition-colors"
+            />
+          </label>
+
           <label className="block">
             <span className="text-sm font-semibold text-ink/80">Description</span>
             <textarea
@@ -201,15 +288,93 @@ function Dashboard() {
               className="mt-1.5 w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35 focus:border-coral outline-none transition-colors resize-none"
             />
           </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-ink/80">Photo</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-              className="mt-1.5 w-full text-sm text-ink/70"
-            />
-          </label>
+
+          {/* Variants */}
+          <div>
+            <span className="text-sm font-semibold text-ink/80">
+              Variations (optional)
+            </span>
+            <p className="text-xs text-ink/45 mb-2">
+              e.g. Size: S, M, L &nbsp;or&nbsp; Color: Black, White
+            </p>
+            <div className="space-y-2">
+              {variantGroups.map((group, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={group.name}
+                    onChange={(e) => updateVariantGroup(i, 'name', e.target.value)}
+                    placeholder="Size"
+                    className="w-24 shrink-0 rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-ink/35 focus:border-coral outline-none transition-colors"
+                  />
+                  <input
+                    type="text"
+                    value={group.optionsText}
+                    onChange={(e) => updateVariantGroup(i, 'optionsText', e.target.value)}
+                    placeholder="S, M, L"
+                    className="flex-1 rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-ink/35 focus:border-coral outline-none transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeVariantGroup(i)}
+                    className="shrink-0 w-9 h-9 flex items-center justify-center text-ink/40 hover:text-red-500"
+                    aria-label="Remove variation"
+                  >
+                    <Trash2 size={16} strokeWidth={2} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={addVariantGroup}
+              className="mt-2 flex items-center gap-1.5 text-xs font-bold text-coral"
+            >
+              <PlusCircle size={15} strokeWidth={2.5} />
+              Add a variation
+            </button>
+          </div>
+
+          {/* Multi-image upload */}
+          <div>
+            <span className="text-sm font-semibold text-ink/80 flex items-center gap-1.5">
+              <ImagePlus size={15} strokeWidth={2.5} className="text-ink/50" />
+              Photos (up to 6)
+            </span>
+            <label className="mt-1.5 flex items-center justify-center gap-2 border border-dashed border-line rounded-lg py-3 text-sm text-ink/60 cursor-pointer hover:border-coral/40 transition-colors">
+              <ImagePlus size={16} strokeWidth={2} />
+              Choose photos
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => addImageFiles(e.target.files)}
+                className="hidden"
+              />
+            </label>
+
+            {imageFiles.length > 0 && (
+              <div className="flex gap-2 mt-3 overflow-x-auto">
+                {imageFiles.map((file, i) => (
+                  <div key={i} className="relative w-16 h-16 shrink-0">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt=""
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImageFile(i)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-ink text-white flex items-center justify-center"
+                      aria-label="Remove photo"
+                    >
+                      <X size={11} strokeWidth={3} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5">
@@ -255,11 +420,19 @@ function Dashboard() {
                 <p className="font-semibold text-sm text-ink truncate">{product.name}</p>
                 <p className="text-sm text-ink/50">₦{Number(product.price).toLocaleString()}</p>
               </div>
+              <Link
+                to={`/product/${product.id}`}
+                className="shrink-0 w-8 h-8 flex items-center justify-center text-ink/40 hover:text-ink"
+                aria-label="View listing"
+              >
+                <Eye size={17} strokeWidth={2} />
+              </Link>
               <button
                 onClick={() => handleDelete(product.id)}
-                className="text-xs font-semibold text-red-500 hover:text-red-600 shrink-0"
+                className="shrink-0 w-8 h-8 flex items-center justify-center text-ink/40 hover:text-red-500"
+                aria-label="Delete listing"
               >
-                Delete
+                <Trash2 size={17} strokeWidth={2} />
               </button>
             </div>
           ))}

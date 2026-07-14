@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
+import { Search, Store, ShieldCheck, BadgeCheck } from 'lucide-react'
 
 function Landing() {
   return (
@@ -59,14 +60,16 @@ function Hero() {
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
         <Link
           to="/signup"
-          className="text-center font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors"
+          className="flex items-center justify-center gap-2 text-center font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors"
         >
+          <Search size={16} strokeWidth={2.5} />
           Start browsing
         </Link>
         <Link
           to="/signup"
-          className="text-center font-bold text-sm px-6 py-3.5 rounded-full border border-ink/15 text-ink hover:border-ink/35 transition-colors"
+          className="flex items-center justify-center gap-2 text-center font-bold text-sm px-6 py-3.5 rounded-full border border-ink/15 text-ink hover:border-ink/35 transition-colors"
         >
+          <Store size={16} strokeWidth={2.5} />
           Sell on Creve
         </Link>
       </div>
@@ -88,8 +91,8 @@ function TrustStrip() {
 
 function TrustItem({ label }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-1.5 h-1.5 rounded-full bg-coral shrink-0" />
+    <div className="flex items-center gap-1.5">
+      <ShieldCheck size={14} strokeWidth={2.5} className="text-coral shrink-0" />
       <span className="text-xs font-semibold text-ink/70">{label}</span>
     </div>
   )
@@ -178,7 +181,7 @@ function VendorCardMock() {
         <div className="flex-1">
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-sm text-ink">Ada's Fabrics</span>
-            <VerifiedDot />
+            <BadgeCheck size={15} className="text-coral" strokeWidth={2.5} />
           </div>
           <span className="text-xs text-ink/50">
             Fashion Design &middot; 200 Level
@@ -200,26 +203,6 @@ function VendorCardMock() {
   )
 }
 
-function VerifiedDot() {
-  return (
-    <span
-      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-coral"
-      aria-label="Verified vendor"
-      title="Verified vendor"
-    >
-      <svg viewBox="0 0 12 12" className="w-2 h-2" fill="none">
-        <path
-          d="M2.5 6.2L4.8 8.5L9.5 3.5"
-          stroke="#FFFFFF"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
-  )
-}
-
 function FinalCTA() {
   return (
     <section className="max-w-5xl mx-auto px-5 py-20 text-center">
@@ -229,14 +212,16 @@ function FinalCTA() {
       <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
         <Link
           to="/signup"
-          className="text-center font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors"
+          className="flex items-center justify-center gap-2 text-center font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors"
         >
+          <Search size={16} strokeWidth={2.5} />
           Start browsing
         </Link>
         <Link
           to="/signup"
-          className="text-center font-bold text-sm px-6 py-3.5 rounded-full border border-ink/15 text-ink hover:border-ink/35 transition-colors"
+          className="flex items-center justify-center gap-2 text-center font-bold text-sm px-6 py-3.5 rounded-full border border-ink/15 text-ink hover:border-ink/35 transition-colors"
         >
+          <Store size={16} strokeWidth={2.5} />
           Sell on Creve
         </Link>
       </div>
