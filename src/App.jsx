@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import VendorProfile from './pages/VendorProfile.jsx'
 import Messages from './pages/Messages.jsx'
 import Conversation from './pages/Conversation.jsx'
+import ProductDetail from './pages/ProductDetail.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/vendor/:vendorId" element={<VendorProfile />} />
+          <Route path="/product/:productId" element={<ProductDetail />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/messages/:otherId" element={<Conversation />} />
         </Routes>
