@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../hooks/useAuth.js'
+import { useCartCount } from '../hooks/useCartCount.js'
 import Logo from '../components/Logo.jsx'
 import {
   ArrowLeft,
@@ -12,15 +13,20 @@ import {
   ShoppingBag,
   ChevronLeft,
   ChevronRight,
+  Check,
 } from 'lucide-react'
 
 function ProductDetail() {
   const { productId } = useParams()
   const { session } = useAuth()
+  const navigate = useNavigate()
+  const cartCount = useCartCount(session)
   const [product, setProduct] = useState(null)
   const [loadingData, setLoadingData] = useState(true)
   const [activeImage, setActiveImage] = useState(0)
   const [selectedOptions, setSelectedOptions] = useState({})
+  const [addingToCart, setAddingToCart] = useState(false)
+  const [addedToCart, setAddedToCart] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -68,6 +74,47 @@ function ProductDetail() {
     setSelectedOptions((prev) => ({ ...prev, [groupName]: option }))
   }
 
+  const variantGroupsMissing =
+    product.variants?.some((g) => !selectedOptions[g.name]) ?? false
+  const outOfStock = product.stock_count !== null && product.stock_count === 0
+
+  async function handleAddToCart() {
+    if (!session) {
+      navigate('/login')
+      return
+    }
+
+    setAddingToCart(true)
+
+    const { data: existing } = await supabase
+      .from('cart_items')
+      .select('id, quantity, selected_variants')
+      .eq('buyer_id', session.user.id)
+      .eq('product_id', product.id)
+
+    const match = (existing ?? []).find(
+      (item) => JSON.stringify(item.selected_variants) === JSON.stringify(selectedOptions)
+    )
+
+    if (match) {
+      await supabase
+        .from('cart_items')
+        .update({ quantity: match.quantity + 1 })
+        .eq('id', match.id)
+    } else {
+      await supabase.from('cart_items').insert({
+        buyer_id: session.user.id,
+        product_id: product.id,
+        quantity: 1,
+        selected_variants: selectedOptions,
+      })
+    }
+
+    setAddingToCart(false)
+    setAddedToCart(true)
+    setTimeout(() => setAddedToCart(false), 2000)
+  }
+
   return (
     <div className="min-h-screen bg-paper text-ink font-body">
       <header className="sticky top-0 z-30 bg-paper/90 backdrop-blur-sm border-b border-line">
@@ -76,13 +123,27 @@ function ProductDetail() {
             <Logo color="#F04E37" size={24} />
             <span className="font-display text-2xl font-bold text-ink">Creve</span>
           </Link>
-          <Link
-            to="/marketplace"
-            className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
-          >
-            <ArrowLeft size={16} strokeWidth={2.5} />
-            Marketplace
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/cart"
+              className="relative flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
+            >
+              <ShoppingBag size={16} strokeWidth={2.5} />
+              Cart
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-coral text-white text-[10px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              to="/marketplace"
+              className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
+            >
+              <ArrowLeft size={16} strokeWidth={2.5} />
+              Marketplace
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -191,11 +252,48 @@ function ProductDetail() {
           </p>
         </div>
 
-        {/* Cart/buy placeholder — intentionally deferred */}
-        <div className="flex items-center gap-2 text-xs text-ink/40 mb-8 border border-dashed border-line rounded-xl px-4 py-3">
-          <ShoppingBag size={16} strokeWidth={2} />
-          Cart and direct checkout are coming soon — message the vendor to arrange a purchase for now.
-        </div>
+        {/* Add to cart */}
+        {!isOwnProduct && (
+          <div className="mb-4">
+            {outOfStock ? (
+              <button
+                disabled
+                className="w-full flex items-center justify-center gap-2 font-bold text-sm px-6 py-3.5 rounded-full bg-ink/10 text-ink/40 cursor-not-allowed"
+              >
+                <Package size={17} strokeWidth={2.5} />
+                Out of stock
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleAddToCart}
+                  disabled={addingToCart || variantGroupsMissing}
+                  className="w-full flex items-center justify-center gap-2 font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors disabled:opacity-60"
+                >
+                  {addedToCart ? (
+                    <>
+                      <Check size={18} strokeWidth={2.5} />
+                      Added to cart
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag size={17} strokeWidth={2.5} />
+                      {addingToCart ? 'Adding…' : 'Add to cart'}
+                    </>
+                  )}
+                </button>
+                {variantGroupsMissing && (
+                  <p className="text-xs text-ink/45 text-center mt-2">
+                    Pick an option above for each variation first.
+                  </p>
+                )}
+              </>
+            )}
+            <p className="text-xs text-ink/40 text-center mt-2">
+              Checkout is coming very soon — for now, message the vendor to arrange payment.
+            </p>
+          </div>
+        )}
 
         {/* Vendor card */}
         {vendor && (
@@ -230,7 +328,7 @@ function ProductDetail() {
             {session ? (
               <Link
                 to={`/messages/${product.vendor_id}`}
-                className="flex items-center justify-center gap-2 font-bold text-sm px-6 py-3.5 rounded-full bg-coral text-white hover:bg-coral-dark transition-colors"
+                className="flex items-center justify-center gap-2 font-bold text-sm px-6 py-3.5 rounded-full border border-ink/15 text-ink hover:border-ink/35 transition-colors"
               >
                 <MessageCircle size={18} strokeWidth={2.5} />
                 Message vendor about this

@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUnreadCount } from '../hooks/useUnreadCount.js'
+import { useCartCount } from '../hooks/useCartCount.js'
 import Logo from '../components/Logo.jsx'
-import { MessageCircle, Store, Search, BadgeCheck, Package } from 'lucide-react'
+import { MessageCircle, Store, Search, BadgeCheck, Package, ShoppingBag } from 'lucide-react'
 
 function Marketplace() {
   const { session } = useAuth()
   const hasUnread = useUnreadCount(session)
+  const cartCount = useCartCount(session)
   const [products, setProducts] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [search, setSearch] = useState('')
@@ -39,6 +41,18 @@ function Marketplace() {
             <span className="font-display text-2xl font-bold text-ink">Creve</span>
           </Link>
           <div className="flex items-center gap-4">
+            <Link
+              to="/cart"
+              className="relative flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
+            >
+              <ShoppingBag size={16} strokeWidth={2.5} />
+              Cart
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-coral text-white text-[10px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
             <Link
               to="/messages"
               className="relative flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
