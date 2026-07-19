@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUnreadCount } from '../hooks/useUnreadCount.js'
+import { hasPremiumAccess, premiumStatusLabel } from '../hooks/usePremiumAccess.js'
 import Logo from '../components/Logo.jsx'
 import FormField from '../components/FormField.jsx'
 import {
@@ -18,7 +19,11 @@ import {
   Package,
   Eye,
   UserCog,
+  Crown,
+  Sparkles,
 } from 'lucide-react'
+
+const FREE_PRODUCT_LIMIT = 5
 
 function Dashboard() {
   const { session, loading } = useAuth()
@@ -37,6 +42,12 @@ function Dashboard() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
+  const [storyFile, setStoryFile] = useState(null)
+  const [storyCaption, setStoryCaption] = useState('')
+  const [postingStory, setPostingStory] = useState(false)
+  const [storyPosted, setStoryPosted] = useState(false)
+  const [storyError, setStoryError] = useState('')
+
   useEffect(() => {
     if (!loading && !session) navigate('/login')
   }, [loading, session, navigate])
@@ -45,7 +56,7 @@ function Dashboard() {
     if (!session) return
     supabase
       .from('profiles')
-      .select('full_name, role, department, level, verified')
+      .select('full_name, role, department, level, verified, trial_ends_at, subscribed_until')
       .eq('id', session.user.id)
       .single()
       .then(({ data }) => {
@@ -100,6 +111,13 @@ function Dashboard() {
 
     if (!name || !price) {
       setError('Name and price are required.')
+      return
+    }
+
+    if (!hasPremiumAccess(profile) && products.length >= FREE_PRODUCT_LIMIT) {
+      setError(
+        `Free plan is capped at ${FREE_PRODUCT_LIMIT} products. Upgrade to add more.`
+      )
       return
     }
 
@@ -170,6 +188,53 @@ function Dashboard() {
     loadProducts()
   }
 
+  async function handlePostStory(e) {
+    e.preventDefault()
+    setStoryError('')
+
+    if (!storyFile) {
+      setStoryError('Choose a photo first.')
+      return
+    }
+
+    setPostingStory(true)
+
+    const fileExt = storyFile.name.split('.').pop()
+    const filePath = `stories/${session.user.id}/${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(filePath, storyFile)
+
+    if (uploadError) {
+      setStoryError(`Upload failed: ${uploadError.message}`)
+      setPostingStory(false)
+      return
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(filePath)
+
+    const { error: insertError } = await supabase.from('stories').insert({
+      vendor_id: session.user.id,
+      image_url: publicUrlData.publicUrl,
+      caption: storyCaption || null,
+    })
+
+    setPostingStory(false)
+
+    if (insertError) {
+      setStoryError(insertError.message)
+      return
+    }
+
+    setStoryFile(null)
+    setStoryCaption('')
+    setStoryPosted(true)
+    setTimeout(() => setStoryPosted(false), 2500)
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut()
     navigate('/')
@@ -216,6 +281,13 @@ function Dashboard() {
               <UserCog size={18} strokeWidth={2.5} />
               <span className="hidden sm:inline">Profile</span>
             </Link>
+            <Link
+              to="/upgrade"
+              className="flex items-center gap-1.5 text-sm font-semibold text-amber hover:text-amber/80"
+            >
+              <Crown size={18} strokeWidth={2.5} />
+              <span className="hidden sm:inline">Upgrade</span>
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
@@ -227,7 +299,7 @@ function Dashboard() {
       </header>
 
       <main className="max-w-3xl mx-auto px-5 py-10">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
           <h1 className="font-display font-bold text-2xl text-ink">
             Your listings
           </h1>
@@ -242,6 +314,13 @@ function Dashboard() {
               Pending review
             </span>
           )}
+          <Link
+            to="/upgrade"
+            className="flex items-center gap-1 text-xs font-semibold text-ink/50 bg-paper border border-line px-2.5 py-1 rounded-full hover:border-amber/40"
+          >
+            <Crown size={12} strokeWidth={2.5} className="text-amber" />
+            {premiumStatusLabel(profile)}
+          </Link>
         </div>
         <p className="text-sm text-ink/60 mb-8">
           {profile.department} &middot; {profile.level} level
@@ -390,6 +469,16 @@ function Dashboard() {
             </p>
           )}
 
+          {!hasPremiumAccess(profile) && products.length >= FREE_PRODUCT_LIMIT && (
+            <p className="text-xs text-amber bg-amber/10 rounded-lg px-3.5 py-2.5">
+              You've hit the free plan's {FREE_PRODUCT_LIMIT}-product limit.{' '}
+              <Link to="/upgrade" className="font-bold underline">
+                Upgrade
+              </Link>{' '}
+              to add more.
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={submitting}
@@ -398,6 +487,59 @@ function Dashboard() {
             {submitting ? 'Adding…' : 'Add product'}
           </button>
         </form>
+
+        {/* Post a Story */}
+        <div className="border border-line rounded-2xl p-5 bg-white mb-10">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles size={18} strokeWidth={2.5} className="text-amber" />
+            <h2 className="font-display font-bold text-lg text-ink">Post a story</h2>
+          </div>
+          <p className="text-xs text-ink/50 mb-4">
+            Shows at the top of the marketplace for 24 hours.
+          </p>
+
+          {hasPremiumAccess(profile) ? (
+            <form onSubmit={handlePostStory} className="space-y-3">
+              <label className="flex items-center justify-center gap-2 border border-dashed border-line rounded-lg py-3 text-sm text-ink/60 cursor-pointer hover:border-coral/40 transition-colors">
+                <ImagePlus size={16} strokeWidth={2} />
+                {storyFile ? storyFile.name : 'Choose a photo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setStoryFile(e.target.files?.[0] ?? null)}
+                  className="hidden"
+                />
+              </label>
+              <input
+                type="text"
+                value={storyCaption}
+                onChange={(e) => setStoryCaption(e.target.value)}
+                placeholder="Caption (optional)"
+                className="w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35 focus:border-coral outline-none transition-colors"
+              />
+              {storyError && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5">
+                  {storyError}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={postingStory}
+                className="w-full font-bold text-sm px-6 py-3 rounded-full bg-amber text-white hover:bg-amber/90 transition-colors disabled:opacity-60"
+              >
+                {storyPosted ? 'Posted ✓' : postingStory ? 'Posting…' : 'Post story'}
+              </button>
+            </form>
+          ) : (
+            <Link
+              to="/upgrade"
+              className="flex items-center justify-center gap-2 text-sm font-bold text-amber bg-amber/10 rounded-full px-4 py-3"
+            >
+              <Crown size={16} strokeWidth={2.5} />
+              Upgrade to post stories
+            </Link>
+          )}
+        </div>
 
         <h2 className="font-display font-bold text-lg text-ink mb-4">
           {loadingProducts ? 'Loading…' : `${products.length} listing${products.length === 1 ? '' : 's'}`}

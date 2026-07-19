@@ -75,6 +75,8 @@ function Marketplace() {
       </header>
 
       <main className="max-w-5xl mx-auto px-5 py-8">
+        <StoriesRail />
+
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-ink mb-5">
           Browse the marketplace
         </h1>
@@ -110,6 +112,65 @@ function Marketplace() {
           ))}
         </div>
       </main>
+    </div>
+  )
+}
+
+function StoriesRail() {
+  const [vendors, setVendors] = useState([])
+  const [loadingStories, setLoadingStories] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      setLoadingStories(true)
+      const { data } = await supabase
+        .from('stories')
+        .select('vendor_id, created_at, profiles(full_name, verified, avatar_url)')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+
+      const seen = new Map()
+      for (const row of data ?? []) {
+        if (!seen.has(row.vendor_id)) {
+          seen.set(row.vendor_id, {
+            vendorId: row.vendor_id,
+            name: row.profiles?.full_name,
+            verified: row.profiles?.verified,
+            avatarUrl: row.profiles?.avatar_url,
+          })
+        }
+      }
+
+      setVendors(Array.from(seen.values()))
+      setLoadingStories(false)
+    }
+    load()
+  }, [])
+
+  if (loadingStories || vendors.length === 0) return null
+
+  return (
+    <div className="flex gap-4 overflow-x-auto mb-6 pb-1">
+      {vendors.map((v) => (
+        <Link
+          key={v.vendorId}
+          to={`/stories/${v.vendorId}`}
+          className="flex flex-col items-center gap-1.5 shrink-0"
+        >
+          <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-coral to-amber">
+            <div className="w-full h-full rounded-full border-2 border-paper overflow-hidden bg-white flex items-center justify-center">
+              {v.avatarUrl ? (
+                <img src={v.avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="font-display font-bold text-coral">{v.name?.[0] ?? '?'}</span>
+              )}
+            </div>
+          </div>
+          <span className="text-xs font-semibold text-ink/70 max-w-[64px] truncate">
+            {v.name}
+          </span>
+        </Link>
+      ))}
     </div>
   )
 }
