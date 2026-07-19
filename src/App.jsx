@@ -11,6 +11,8 @@ import Conversation from './pages/Conversation.jsx'
 import ProductDetail from './pages/ProductDetail.jsx'
 import Cart from './pages/Cart.jsx'
 import EditProfile from './pages/EditProfile.jsx'
+import Upgrade from './pages/Upgrade.jsx'
+import StoryViewer from './pages/StoryViewer.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
           <Route path="/messages/:otherId" element={<Conversation />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/profile/edit" element={<EditProfile />} />
+          <Route path="/upgrade" element={<Upgrade />} />
+          <Route path="/stories/:vendorId" element={<StoryViewer />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>
