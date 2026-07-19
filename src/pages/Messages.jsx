@@ -74,11 +74,11 @@ function Messages() {
         <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <Logo color="#F04E37" size={24} />
-            <span className="font-display text-2xl font-bold text-ink">Creve</span>
+            <span className="font-display text-2xl font-bold text-ink hidden sm:inline">Creve</span>
           </Link>
           <Link to="/marketplace" className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink">
-            <Store size={16} strokeWidth={2.5} />
-            Marketplace
+            <Store size={18} strokeWidth={2.5} />
+            <span className="hidden sm:inline">Marketplace</span>
           </Link>
         </div>
       </header>

@@ -18,7 +18,7 @@ function VendorProfile() {
       const [{ data: vendorData }, { data: productData }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('full_name, department, level, verified')
+          .select('full_name, department, level, verified, avatar_url, bio, social_links')
           .eq('id', vendorId)
           .single(),
         supabase
@@ -40,11 +40,11 @@ function VendorProfile() {
         <div className="max-w-3xl mx-auto px-5 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <Logo color="#F04E37" size={24} />
-            <span className="font-display text-2xl font-bold text-ink">Creve</span>
+            <span className="font-display text-2xl font-bold text-ink hidden sm:inline">Creve</span>
           </Link>
           <Link to="/marketplace" className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink">
-            <ArrowLeft size={16} strokeWidth={2.5} />
-            Back to marketplace
+            <ArrowLeft size={18} strokeWidth={2.5} />
+            <span className="hidden sm:inline">Back to marketplace</span>
           </Link>
         </div>
       </header>
@@ -58,10 +58,18 @@ function VendorProfile() {
 
         {vendor && (
           <>
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-14 h-14 rounded-full bg-coral-light flex items-center justify-center font-display font-bold text-coral text-lg shrink-0">
-                {vendor.full_name?.[0] ?? '?'}
-              </div>
+            <div className="flex items-center gap-4 mb-2">
+              {vendor.avatar_url ? (
+                <img
+                  src={vendor.avatar_url}
+                  alt={vendor.full_name}
+                  className="w-14 h-14 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-coral-light flex items-center justify-center font-display font-bold text-coral text-lg shrink-0">
+                  {vendor.full_name?.[0] ?? '?'}
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="font-display font-bold text-xl text-ink">
@@ -84,6 +92,27 @@ function VendorProfile() {
                 </p>
               </div>
             </div>
+
+            {vendor.bio && (
+              <p className="text-sm text-ink/65 leading-relaxed mb-4">{vendor.bio}</p>
+            )}
+
+            {vendor.social_links?.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-8">
+                {vendor.social_links.map((link, i) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold text-coral bg-coral-light px-3 py-1.5 rounded-full hover:bg-coral hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            )}
+            {!vendor.social_links?.length && <div className="mb-8" />}
 
             {session && session.user.id === vendorId ? null : (
               <div className="mb-10">

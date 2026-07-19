@@ -38,17 +38,17 @@ function Marketplace() {
         <div className="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <Logo color="#F04E37" size={24} />
-            <span className="font-display text-2xl font-bold text-ink">Creve</span>
+            <span className="font-display text-2xl font-bold text-ink hidden sm:inline">Creve</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link
               to="/cart"
               className="relative flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
             >
-              <ShoppingBag size={16} strokeWidth={2.5} />
-              Cart
+              <ShoppingBag size={18} strokeWidth={2.5} />
+              <span className="hidden sm:inline">Cart</span>
               {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-coral text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-coral text-white text-[10px] font-bold flex items-center justify-center">
                   {cartCount}
                 </span>
               )}
@@ -57,18 +57,18 @@ function Marketplace() {
               to="/messages"
               className="relative flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
             >
-              <MessageCircle size={16} strokeWidth={2.5} />
-              Messages
+              <MessageCircle size={18} strokeWidth={2.5} />
+              <span className="hidden sm:inline">Messages</span>
               {hasUnread && (
-                <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-coral" aria-label="Unread messages" />
+                <span className="absolute -top-1 -right-1.5 sm:-right-2 w-2 h-2 rounded-full bg-coral" aria-label="Unread messages" />
               )}
             </Link>
             <Link
               to="/dashboard"
               className="flex items-center gap-1.5 text-sm font-semibold text-ink/70 hover:text-ink"
             >
-              <Store size={16} strokeWidth={2.5} />
-              Sell
+              <Store size={18} strokeWidth={2.5} />
+              <span className="hidden sm:inline">Sell</span>
             </Link>
           </div>
         </div>
