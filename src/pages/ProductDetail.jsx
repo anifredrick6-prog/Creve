@@ -34,7 +34,7 @@ function ProductDetail() {
       const { data } = await supabase
         .from('products')
         .select(
-          'id, name, price, description, image_url, image_urls, stock_count, variants, vendor_id, profiles(full_name, department, level, verified)'
+          'id, name, price, description, image_url, image_urls, stock_count, variants, listing_type, vendor_id, profiles(full_name, department, level, verified)'
         )
         .eq('id', productId)
         .single()
@@ -273,12 +273,16 @@ function ProductDetail() {
                   {addedToCart ? (
                     <>
                       <Check size={18} strokeWidth={2.5} />
-                      Added to cart
+                      {product.listing_type === 'service' ? 'Added to requests' : 'Added to cart'}
                     </>
                   ) : (
                     <>
                       <ShoppingBag size={17} strokeWidth={2.5} />
-                      {addingToCart ? 'Adding…' : 'Add to cart'}
+                      {addingToCart
+                        ? 'Adding…'
+                        : product.listing_type === 'service'
+                        ? 'Request this service'
+                        : 'Add to cart'}
                     </>
                   )}
                 </button>

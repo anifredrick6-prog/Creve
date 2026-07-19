@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useUnreadCount } from '../hooks/useUnreadCount.js'
@@ -21,6 +22,10 @@ import {
   UserCog,
   Crown,
   Sparkles,
+  Package2,
+  Wrench,
+  QrCode,
+  Download,
 } from 'lucide-react'
 
 const FREE_PRODUCT_LIMIT = 5
@@ -34,6 +39,7 @@ function Dashboard() {
   const [loadingProducts, setLoadingProducts] = useState(true)
 
   const [name, setName] = useState('')
+  const [listingType, setListingType] = useState('product')
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
   const [stockCount, setStockCount] = useState('')
@@ -163,8 +169,9 @@ function Dashboard() {
       description,
       image_url: uploadedUrls[0] ?? null,
       image_urls: uploadedUrls,
-      stock_count: stockCount === '' ? null : parseInt(stockCount, 10),
+      stock_count: listingType === 'service' || stockCount === '' ? null : parseInt(stockCount, 10),
       variants: cleanVariants,
+      listing_type: listingType,
     })
 
     setSubmitting(false)
@@ -326,19 +333,48 @@ function Dashboard() {
           {profile.department} &middot; {profile.level} level
         </p>
 
+        <QRCodeCard vendorId={session.user.id} />
+
         <form
           onSubmit={handleAddProduct}
           className="border border-line rounded-2xl p-5 bg-white mb-10 space-y-4"
         >
-          <h2 className="font-display font-bold text-lg text-ink">Add a product</h2>
+          <h2 className="font-display font-bold text-lg text-ink">Add a listing</h2>
+
+          <div className="flex gap-2 bg-paper border border-line rounded-full p-1">
+            <button
+              type="button"
+              onClick={() => setListingType('product')}
+              className={`flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold py-2 rounded-full transition-colors ${
+                listingType === 'product' ? 'bg-coral text-white' : 'text-ink/60'
+              }`}
+            >
+              <Package2 size={15} strokeWidth={2.5} />
+              Product
+            </button>
+            <button
+              type="button"
+              onClick={() => setListingType('service')}
+              className={`flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold py-2 rounded-full transition-colors ${
+                listingType === 'service' ? 'bg-coral text-white' : 'text-ink/60'
+              }`}
+            >
+              <Wrench size={15} strokeWidth={2.5} />
+              Service
+            </button>
+          </div>
 
           <FormField
-            label="Product name"
+            label={listingType === 'service' ? 'Service name' : 'Product name'}
             type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Ankara fabric, 6 yards"
+            placeholder={
+              listingType === 'service'
+                ? 'e.g. Laundry pickup & wash'
+                : 'e.g. Ankara fabric, 6 yards'
+            }
           />
           <FormField
             label="Price (₦)"
@@ -350,20 +386,22 @@ function Dashboard() {
             placeholder="e.g. 8500"
           />
 
-          <label className="block">
-            <span className="text-sm font-semibold text-ink/80 flex items-center gap-1.5">
-              <Package size={15} strokeWidth={2.5} className="text-ink/50" />
-              In stock (optional)
-            </span>
-            <input
-              type="number"
-              min="0"
-              value={stockCount}
-              onChange={(e) => setStockCount(e.target.value)}
-              placeholder="Leave blank if you're not tracking stock"
-              className="mt-1.5 w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35 focus:border-coral outline-none transition-colors"
-            />
-          </label>
+          {listingType === 'product' && (
+            <label className="block">
+              <span className="text-sm font-semibold text-ink/80 flex items-center gap-1.5">
+                <Package size={15} strokeWidth={2.5} className="text-ink/50" />
+                In stock (optional)
+              </span>
+              <input
+                type="number"
+                min="0"
+                value={stockCount}
+                onChange={(e) => setStockCount(e.target.value)}
+                placeholder="Leave blank if you're not tracking stock"
+                className="mt-1.5 w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35 focus:border-coral outline-none transition-colors"
+              />
+            </label>
+          )}
 
           <label className="block">
             <span className="text-sm font-semibold text-ink/80">Description</span>
@@ -567,7 +605,14 @@ function Dashboard() {
                 <div className="w-16 h-16 rounded-lg bg-paper border border-line shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-ink truncate">{product.name}</p>
+                <div className="flex items-center gap-1.5">
+                  {product.listing_type === 'service' ? (
+                    <Wrench size={12} strokeWidth={2.5} className="text-amber shrink-0" />
+                  ) : (
+                    <Package2 size={12} strokeWidth={2.5} className="text-ink/35 shrink-0" />
+                  )}
+                  <p className="font-semibold text-sm text-ink truncate">{product.name}</p>
+                </div>
                 <p className="text-sm text-ink/50">₦{Number(product.price).toLocaleString()}</p>
               </div>
               <Link
@@ -593,3 +638,50 @@ function Dashboard() {
 }
 
 export default Dashboard
+
+function QRCodeCard({ vendorId }) {
+  const canvasRef = useRef(null)
+  const profileUrl = `${window.location.origin}/vendor/${vendorId}`
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, profileUrl, {
+        width: 120,
+        margin: 1,
+        color: { dark: '#1C1B19', light: '#FFFFFF' },
+      })
+    }
+  }, [profileUrl])
+
+  function handleDownload() {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const link = document.createElement('a')
+    link.download = 'creve-qr-code.png'
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  }
+
+  return (
+    <div className="border border-line rounded-2xl p-5 bg-white mb-6 flex items-center gap-4">
+      <canvas ref={canvasRef} className="rounded-lg shrink-0" />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 mb-1">
+          <QrCode size={16} strokeWidth={2.5} className="text-ink/50" />
+          <p className="font-display font-bold text-sm text-ink">Your QR code</p>
+        </div>
+        <p className="text-xs text-ink/50 mb-3 leading-relaxed">
+          Print it, stick it on your stall or hostel door — buyers scan
+          straight to your verified profile.
+        </p>
+        <button
+          onClick={handleDownload}
+          className="flex items-center gap-1.5 text-xs font-bold text-coral"
+        >
+          <Download size={13} strokeWidth={2.5} />
+          Download
+        </button>
+      </div>
+    </div>
+  )
+}

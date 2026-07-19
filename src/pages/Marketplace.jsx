@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { useUnreadCount } from '../hooks/useUnreadCount.js'
 import { useCartCount } from '../hooks/useCartCount.js'
 import Logo from '../components/Logo.jsx'
-import { MessageCircle, Store, Search, BadgeCheck, Package, ShoppingBag } from 'lucide-react'
+import { MessageCircle, Store, Search, BadgeCheck, Package, ShoppingBag, Package2, Wrench } from 'lucide-react'
 
 function Marketplace() {
   const { session } = useAuth()
@@ -14,13 +14,14 @@ function Marketplace() {
   const [products, setProducts] = useState([])
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
 
   useEffect(() => {
     async function load() {
       setLoadingProducts(true)
       const { data } = await supabase
         .from('products')
-        .select('id, name, price, image_url, stock_count, vendor_id, profiles(full_name, department, level, verified)')
+        .select('id, name, price, image_url, stock_count, listing_type, vendor_id, profiles(full_name, department, level, verified)')
         .order('created_at', { ascending: false })
       setProducts(data ?? [])
       setLoadingProducts(false)
@@ -28,9 +29,9 @@ function Marketplace() {
     load()
   }, [])
 
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = products
+    .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    .filter((p) => typeFilter === 'all' || p.listing_type === typeFilter)
 
   return (
     <div className="min-h-screen bg-paper text-ink font-body">
@@ -94,6 +95,26 @@ function Marketplace() {
             placeholder="Search products…"
             className="w-full rounded-full border border-line bg-white pl-11 pr-5 py-3 text-sm text-ink placeholder:text-ink/40 focus:border-coral outline-none transition-colors"
           />
+        </div>
+
+        <div className="flex gap-2 mb-6">
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'product', label: 'Products' },
+            { key: 'service', label: 'Services' },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setTypeFilter(tab.key)}
+              className={`text-sm font-semibold px-4 py-2 rounded-full border transition-colors ${
+                typeFilter === tab.key
+                  ? 'bg-coral text-white border-coral'
+                  : 'border-line text-ink/60 hover:border-coral/40'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {loadingProducts && <p className="text-sm text-ink/50">Loading…</p>}
@@ -196,7 +217,14 @@ function ProductCard({ product }) {
         </div>
       )}
       <div className="p-3">
-        <p className="font-semibold text-sm text-ink truncate">{product.name}</p>
+        <div className="flex items-center gap-1 mb-0.5">
+          {product.listing_type === 'service' ? (
+            <Wrench size={11} strokeWidth={2.5} className="text-amber shrink-0" />
+          ) : (
+            <Package2 size={11} strokeWidth={2.5} className="text-ink/30 shrink-0" />
+          )}
+          <p className="font-semibold text-sm text-ink truncate">{product.name}</p>
+        </div>
         <p className="text-sm font-bold text-ink mt-0.5">
           ₦{Number(product.price).toLocaleString()}
         </p>
