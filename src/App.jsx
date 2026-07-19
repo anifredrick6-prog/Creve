@@ -10,6 +10,7 @@ import Messages from './pages/Messages.jsx'
 import Conversation from './pages/Conversation.jsx'
 import ProductDetail from './pages/ProductDetail.jsx'
 import Cart from './pages/Cart.jsx'
+import EditProfile from './pages/EditProfile.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
           <Route path="/messages" element={<Messages />} />
           <Route path="/messages/:otherId" element={<Conversation />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/profile/edit" element={<EditProfile />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>
